@@ -1,0 +1,16 @@
+# --- sunucuya ozel gizli yapilandirma: ASLA depoya girmez ---
+gizli.php
+
+# --- yerel/gecici ---
+*.bak
+*.bak_*
+*.yedek_*
+*.tmp
+*.log
+_*.php
+_*.html
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
