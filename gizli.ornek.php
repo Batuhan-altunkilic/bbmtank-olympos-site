@@ -25,3 +25,11 @@ $BBM_SMTP_GUVENLIK = 'tls';
 $BBM_SMTP_USER     = 'destek@ornek.com';
 $BBM_SMTP_PASS     = 'BURAYA_POSTA_SIFRESI';
 $BBM_SMTP_GONDEREN = 'destek@ornek.com';
+
+/* --- yonetici paneli --- */
+$BBM_PANEL_PASS = 'BURAYA_UZUN_RASTGELE_BIR_SIFRE';
+
+/* --- yedek SQL sunucusu (istege bagli) --- */
+$BBM_SQL2_HOST = '';
+$BBM_SQL2_UID  = '';
+$BBM_SQL2_PWD  = '';
