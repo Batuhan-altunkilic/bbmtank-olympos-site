@@ -11,9 +11,20 @@
 ini_set('default_charset', 'UTF-8');
 include('global.php');
 
-if (!isset($_SESSION['UserId']) || isset($_GET['logout'])) {
-    session_destroy();
-    die('<script>window.location="Anasayfa.php";</script>');
+if (!isset($_SESSION['UserId'])) {
+    header('Location: Anasayfa.php');
+    exit();
+}
+
+/* 24.08.2026: cikis yalnizca session_destroy() cagiriyordu; $_SESSION dizisi
+   ve oturum cerezi temizlenmiyordu. Ayrica cikis duz bir GET baglantisiydi
+   (baska sitedeki bir <img> ile tetiklenebilirdi) -> jeton eklendi. */
+if (isset($_GET['logout'])) {
+    if (isset($_GET['j']) && hash_equals(csrfJeton(), (string)$_GET['j'])) {
+        oturumKapat();
+    }
+    header('Location: Anasayfa.php');
+    exit();
 }
 
 $kullanici = $_SESSION['UserName'];
@@ -24,19 +35,19 @@ $kupon     = isset($_SESSION['Coin']) ? (int)$_SESSION['Coin'] : 0;
 /* --- karakter verisi (canli) --- */
 $ben = null; $birlik = ''; $sira = 0;
 co();
-$ben = qa(q("SELECT TOP 1 NickName, Grade, GP, Gold, Money, Offer, Win, Total, [Escape],
-                    FightPower, ConsortiaID, LoginCount, Date
-             FROM {$dbtank}.dbo.Sys_Users_Detail
-             WHERE UserName = '" . addslashes($kullanici) . "'"));
+$ben = qp1("SELECT TOP 1 NickName, Grade, GP, Gold, Money, Offer, Win, Total, [Escape],
+                   FightPower, ConsortiaID, LoginCount, [Date]
+            FROM {$dbtank}.dbo.Sys_Users_Detail
+            WHERE UserName = ?", array($kullanici));
 if ($ben) {
     $cid = (int)$ben['ConsortiaID'];
     if ($cid > 0) {
-        $c = qa(q("SELECT TOP 1 ConsortiaName FROM {$dbtank}.dbo.Consortia WHERE ConsortiaID = {$cid}"));
+        $c = qp1("SELECT TOP 1 ConsortiaName FROM {$dbtank}.dbo.Consortia WHERE ConsortiaID = ?", array($cid));
         if ($c) $birlik = $c['ConsortiaName'];
     }
-    $r = qa(q("SELECT COUNT(*) AS a FROM {$dbtank}.dbo.Sys_Users_Detail
-               WHERE Grade > " . (int)$ben['Grade'] . "
-                  OR (Grade = " . (int)$ben['Grade'] . " AND GP > " . (int)$ben['GP'] . ")"));
+    $r = qp1("SELECT COUNT(*) AS a FROM {$dbtank}.dbo.Sys_Users_Detail
+              WHERE Grade > ? OR (Grade = ? AND GP > ?)",
+             array((int)$ben['Grade'], (int)$ben['Grade'], (int)$ben['GP']));
     if ($r) $sira = (int)$r['a'] + 1;
 }
 
@@ -72,7 +83,7 @@ include('parts/ust.php');
         <div style="flex:0 0 auto">
           <a class="btn" href="play.php" style="font-size:19px;padding:20px 46px">⚔️ OYNA</a>
           <div style="margin-top:12px;text-align:center">
-            <a href="index.php?logout=true" style="color:var(--metin-sonuk);font-size:13.5px;text-decoration:underline">Çıkış yap</a>
+            <a href="index.php?logout=true&amp;j=<?php echo htmlspecialchars(csrfJeton(), ENT_QUOTES); ?>" style="color:var(--metin-sonuk);font-size:13.5px;text-decoration:underline">Çıkış yap</a>
           </div>
         </div>
       </div>

@@ -1,97 +1,87 @@
+<?php
+/* =====================================================================
+   BBMTANK OLYMPOS — ANA SAYFA (giris)            24.08.2026
+   ---------------------------------------------------------------------
+   🚨 KALDIRILAN ARKA KAPI
+   Bu dosyanin basinda, sayfada karsiligi olmayan bir KAYIT blogu vardi
+   (isset($_POST['register'])). Olu kod gibi duruyordu ama disaridan POST
+   ile calistirilabiliyordu:
+     * Captcha kontrolu  $capt != $_SESSION['dnss_code']  seklindeydi;
+       dnss_code hicbir yerde set edilmiyor. Bos captcha gonderildiginde
+       '' != null  PHP'de FALSE doner -> kontrol basariyla gecilirdi.
+     * Blok hesabi @GP=264058, @Grade=17 ile aciyordu.
+   Sonuc: isteyen, sinirsiz sayida 17. seviye / 264 bin tecrubeli hesap
+   uretebilir; register.php'deki isim yasagi, uzunluk kontrolleri ve
+   canta sifresi zorunlulugu tamamen baypas edilirdi.
+   Blok tamamen silindi. Kayit yalnizca register.php uzerinden yapilir.
 
-<?php
- ini_set('default_charset','UTF-8');
-?>
-<?php
+   Ayrica bu turda:
+     * Basarili giriste session_regenerate_id (oturum sabitleme)
+     * Giris formuna CSRF jetonu
+     * Giris sonrasi sorgular parametreli (qp) hale getirildi
+     * ItemForVipUser.php dosyasi sunucuda YOK; include artik korumali
+   ===================================================================== */
+ini_set('default_charset', 'UTF-8');
 include('global.php');
-if(isset($_SESSION['UserId'])) {
-	echo '<script type="text/javascript">window.location="index.php";</script>';
-	exit();
+
+if (isset($_SESSION['UserId'])) {
+    header('Location: index.php');
+    exit();
 }
+
 $loginError = '';
-if(isset($_POST['login'])) {
-	co();
-	$u = addslashes($_POST['username']);
-	$p = strtoupper(md5($_POST['password']));
-	$app  = 'DanDanTang';
-	$uid  = 0;
-	$data = array(
-		array($app, SQLSRV_PARAM_IN),
-		array($u, SQLSRV_PARAM_IN),
-		array($p, SQLSRV_PARAM_IN),
-		array(&$uid, SQLSRV_PARAM_OUT)
-	);
-	$check = sqlsrv_query($conn, "{CALL Mem_Users_Accede (?,?,?,?)}", $data);
-	sqlsrv_next_result($check);
-	if($uid <= 0)
-	{
-		$loginError = 'Kullanıcı adı veya şifre hatalı!';
-	}
-	else
-	{
-		$_SESSION['UserName'] = $u;
-		$_SESSION['UserId']	  = $uid;
-		$_SESSION['PassWord'] = $p;
-		$ut = qa(q("SELECT TOP 1 UserID FROM {$dbtank}.dbo.Sys_Users_Detail WHERE UserName = '{$u}'")); $_SESSION['UserIdTank'] = $ut ? $ut['UserID'] : 0;
-		$_SESSION['Coin']	= loadCoin($uid);
-		$_SESSION['IsVip'] = IsVipUser($uid);
-		$q = q("SELECT TOP 1 NickName FROM {$dbtank}.dbo.Sys_Users_Detail Where UserName = '{$u}'");
-		$info = qa($q);
-		$_SESSION['NickName'] = $info['NickName'];
-		if($_SESSION['IsVip'] == 1) include('ItemForVipUser.php');
-		echo '<script type="text/javascript">window.location="index.php";</script>';
-		exit();
-	}
-}
-if(isset($_POST['register'])) {
-	$u = addslashes($_POST['rusername']);
-	$p = $_POST['rpassword'];
-	$rp = $_POST['rtpassword'];
-	$n = addslashes($_POST['nickname']);
-	$p2 = $_POST['PassTwo'];
-	$e = $_POST['email'];
-	$s = (int)$_POST['sex'];
-	$capt = $_POST['captcha'];
-	$text_r = null;
-	if($u == null || $p == null || $rp == null || $n == null || $p2 == null || $e == null) {
-		$text_r .= 'Tüm bilgileri doldurun. <br>';
-	}
-	if($capt != $_SESSION['dnss_code'])
-		$text_r .= 'Güvenlik doğrulamasını hatalı girdiniz. <br>';
-	if(!preg_match("/^([a-zA-Z0-9\-\_]*)$/",$u) || !preg_match("/^([a-zA-Z0-9\-\_]*)$/",$n)) {
-		$text_r .= 'Kullanıcı Adı veya Karakter Adı geçersiz.<br>';
-	}
-	if(!filter_var($e,FILTER_VALIDATE_EMAIL)) $text_r .= ' E-posta adresinizi kontrol edin.<br>';
-	if($p != $rp) $text_r.= 'Geçerli bir şifre girin. <br>';
-	if(strlen($u)  < 6 || strlen($u)  > 30) $text_r .= 'Kullanıcı adı 6-30 karakter aralığında olmalıdır. <br>';
-	if(strlen($p)  < 6 || strlen($p)  > 30) $text_r .= 'Şifre 6-30 karakter aralığında olmalıdır. <br>';
-	if(strlen($p2) < 6 || strlen($p2) > 30) $text_r .= 'WebShop şifresi 6-30 karakter aralığında olmalıdır. <br>';
-	if(strlen($n)  < 6 || strlen($n)  > 30) $text_r .= 'Karakter Adı 6-30 karakter aralığında olmalıdır. <br>';
-	if($text_r == '') {
-		co();
-		$p = strtoupper(md5($p));
-		$q = q("Select TOP 1 UserId From Mem_Users Where UserName = '{$u}'");
-		if(qn($q) == 0) {
-			$q = q("Select TOP 1 UserId From Webshop_Account Where Email = '{$e}'");
-			if(qn($q) == 0) {
-				$q = q("Select TOP 1 UserId From ".$dbtank.".dbo.Sys_Users_Detail Where NickName = '{$n}'");
-				if(qn($q) == 0) {
-					q("exec ".$config['Database'].".dbo.Webshop_Register @ApplicationName=N'DanDanTang',@UserName=N'{$u}',@password=N'{$p}',@email='{$e}',@passtwo = '".strtoupper(md5($p2))."',@error = 0");
-					q("exec ".$dbtank.".dbo.SP_Users_Active @UserID='',@Attack=0,@Colors=N',,,,,,',@ConsortiaID=0,@Defence=0,@Gold=0,@GP=264058,@Grade=17,@Luck=0,@Money=0,@Style=N',,,,,,',@Agility=0,@State=0,@UserName=N'{$u}',@PassWord=N'{$p}',@Sex='".$s."',@Hide=1111111111,@ActiveIP=N'',@Skin=N'',@Site=N''");
-					if($s == 1) {
-						q("exec ".$dbtank.".dbo.SP_Users_RegisterNotValidate @UserName=N'".$u."',@PassWord=N'{$p}',@NickName=N'{$n}',@BArmID=7010,@BHairID=3158,@BFaceID=6103,@BClothID=5160,@BHatID=1142,@GArmID=7010,@GHairID=3158,@GFaceID=6103,@GClothID=5160,@GHatID=1142,@ArmColor=N'',@HairColor=N'',@FaceColor=N'',@ClothColor=N'',@HatColor=N'',@Sex='{$s}',@StyleDate=0");
-					}
-					else {
-						q ("exec ".$dbtank.".dbo.SP_Users_RegisterNotValidate @UserName=N'{$u}',@PassWord=N'{$p}',@NickName=N'{$n}',@BArmID=7010,@BHairID=3244,@BFaceID=6204,@BClothID=5276,@BHatID=1214,@GArmID=7010,@GHairID=3244,@GFaceID=6202,@GClothID=5276,@GHatID=1214,@ArmColor=N'',@HairColor=N'',@FaceColor=N'',@ClothColor=N'',@HatColor=N'',@Sex='{$s}',@StyleDate=0");
-					}
-					q("exec ".$dbtank.".dbo.SP_Users_LoginWeb @UserName=N'{$u}',@Password=N'',@FirstValidate=0,@NickName=N'{$n}'");
-					echo '<script type="text/javascript">alert("BBMTank\'a hoşgeldin! Hemen giriş yap, eğlenceye ilk adımını at!");</script>';
-				} else $text_r .= 'Bu karakter adı zaten kullanılıyor';
-			} else $text_r .= 'Bu e-posta zaten kullanılıyor';
-		} else $text_r .= 'Bu kullanıcı adı zaten kullanılıyor';
-	}
+
+if (isset($_POST['login'])) {
+    if (!csrfGecerli()) {
+        $loginError = 'Oturum doğrulaması başarısız. Sayfayı yenileyip tekrar dene.';
+    } else {
+        co();
+        $u   = (string)$_POST['username'];
+        $p   = strtoupper(md5((string)$_POST['password']));
+        $uid = 0;
+        $data = array(
+            array('DanDanTang', SQLSRV_PARAM_IN),
+            array($u,           SQLSRV_PARAM_IN),
+            array($p,           SQLSRV_PARAM_IN),
+            array(&$uid,        SQLSRV_PARAM_OUT)
+        );
+        $check = sqlsrv_query($conn, "{CALL Mem_Users_Accede (?,?,?,?)}", $data);
+        if ($check) sqlsrv_next_result($check);
+
+        if ($uid <= 0) {
+            $loginError = 'Kullanıcı adı veya şifre hatalı!';
+        } else {
+            oturumTazele();   /* oturum sabitlemeye karsi */
+
+            $_SESSION['UserName'] = $u;
+            $_SESSION['UserId']   = $uid;
+            /* Oyun anahtari uretilirken (play.php -> checkuser.ashx) sifrenin
+               MD5'i gerekiyor; bu yuzden oturumda tutuluyor. Duz metin sifre
+               HICBIR yerde saklanmaz. */
+            $_SESSION['PassWord'] = $p;
+
+            $ut = qp1("SELECT TOP 1 UserID FROM {$dbtank}.dbo.Sys_Users_Detail WHERE UserName = ?", array($u));
+            $_SESSION['UserIdTank'] = $ut ? (int)$ut['UserID'] : 0;
+
+            $_SESSION['Coin']  = loadCoin($_SESSION['UserIdTank']);
+            $_SESSION['IsVip'] = IsVipUser($uid);
+
+            $nick = qp1("SELECT TOP 1 NickName FROM {$dbtank}.dbo.Sys_Users_Detail WHERE UserName = ?", array($u));
+            $_SESSION['NickName'] = $nick ? $nick['NickName'] : $u;
+
+            /* ItemForVipUser.php bu kurulumda yok; korumasiz include
+               VIP oyuncunun girisini fatal hata ile dusuruyordu. */
+            if ($_SESSION['IsVip'] == 1 && file_exists(__DIR__ . '/ItemForVipUser.php')) {
+                include('ItemForVipUser.php');
+            }
+
+            header('Location: index.php');
+            exit();
+        }
+    }
 }
 ?>
+
 <?php
 /* --- canli veriler (uydurma yok, DB'den) --- */
 $sv_oyuncu = 0; $sv_birlik = 0; $sv_kesif = 16; $sv_harita = 0; $sv_lider = array();
@@ -139,8 +129,8 @@ include('parts/ust.php');
       <h3>Tanrılar seni bekliyor</h3>
       <p class="not">Hesabına gir, doğruca meydana düş.</p>
       <?php if ($loginError): ?><div class="hata"><?php echo htmlspecialchars($loginError); ?></div><?php endif; ?>
-      <?php if (isset($text_r) && $text_r): ?><div class="hata"><?php echo $text_r; ?></div><?php endif; ?>
       <form action="Anasayfa.php" method="POST" autocomplete="off">
+        <?php echo csrfAlan(); ?>
         <div class="alan">
           <label for="k_ad">Kullanıcı Adı</label>
           <input id="k_ad" type="text" name="username" placeholder="kullanıcı adın" required>

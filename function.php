@@ -23,108 +23,6 @@ function qc()
 	global $conn;
 	sqlsrv_close($conn);
 }
-function geraString($tamanho = 8,$miniscula = true, $maiusculas = true, $numeros = true, $simbolos = false)
-{
-// Caracteres de cada tipo
-$lmin = 'abcdefghijklmnopqrstuvwxyz';
-$lmai = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-/* 24.08.2026: burada rakam kumesi olmasi gerekirken SQL sifresi yapistirilmisti.
-   Hem sizinti hem hata: uretilen rastgele dizeler sifrenin harflerini tasiyordu.
-   Dogrusu asagidaki rakam kumesi. */
-$num = '0123456789';
-$simb = '!@#$%*-';
-// Variáveis internas
-$retorno = '';
-$caracteres = '';
-// Agrupamos todos os caracteres que poderão ser utilizados
-if ($minuscula) $caracteres .= $lmin;
-if ($maiusculas) $caracteres .= $lmai;
-if ($numeros) $caracteres .= $num;
-if ($simbolos) $caracteres .= $simb;
-// Calculamos o total de caracteres possíveis
-$len = strlen($caracteres);
-for ($n = 1; $n <= $tamanho; $n++) {
-// Criamos um número aleatório de 1 até $len para pegar um dos caracteres
-$rand = mt_rand(1, $len);
-// Concatenamos um dos caracteres na variável $retorno
-$retorno .= $caracteres[$rand-1];
-}
-return $retorno;
-}
-function cryptJs($script,$tipo){
-
-		if($tipo==0){//none
-			$encoding=0;
-		}
-		if($tipo==1){//numeric
-			$encoding=10;
-		}
-		if($tipo==2){//normal
-			$encoding=62;
-		}
-		if($tipo==3){// high ASCI
-			$encoding=95;
-		}
-  if (get_magic_quotes_gpc())
-    $script = stripslashes($script);
-  //$encoding = 62;
-  $fast_decode = isset($_POST['fast_decode']) && $_POST['fast_decode'];
-  $special_char = isset($_POST['special_char'])&& $_POST['special_char'];
-  
-  require 'jsCrypt/class.JavaScriptPacker.php';
-  $t1 = microtime(true);
-  $packer = new JavaScriptPacker($script, $encoding, $fast_decode, $special_char);
-  $packed = $packer->pack();
-  $t2 = microtime(true);
-  
-  $originalLength = strlen($script);
-  $packedLength = strlen($packed);
-  $ratio =  number_format($packedLength / $originalLength, 3);
-  $time = sprintf('%.4f', ($t2 - $t1) );
-  
-  return $packed;
-
-}
-function requisicaoApi($params, $endpoint){
-    $url = "http://api.directcallsoft.com/{$endpoint}";
-    $data = http_build_query($params);
-    $ch =   curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-    curl_setopt($ch, CURLOPT_HEADER, 0);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    $return = curl_exec($ch);
-    curl_close($ch);
-    // Converte os dados de JSON para ARRAY
-    $dados = json_decode($return, true);
-    return $dados;
-}
-function sendSms($SMS,$numero){ 
-// CLIENT_ID que é fornecido pela DirectCall (Seu e-mail)
-/* 24.08.2026: devralinan kaynakta BASKA BIR SUNUCUYA ait DirectCall SMS
-   kimligi acik yaziyordu; bu fonksiyon hicbir yerden cagrilmiyor.
-   Kimlik temizlendi, kullanilacaksa gizli.php'den okunmali. */
-$client_id = "";
-// CLIENT_SECRET que é fornecido pela DirectCall (Código recebido por SMS)
-$client_secret = "";
-// Faz a requisicao do access_token
-$req = requisicaoApi(array('client_id'=>$client_id, 'client_secret'=>$client_secret), "request_token");
-//Seta uma variavel com o access_token
-$access_token = $req['access_token'];
-// Enviadas via POST do nosso contato.html
-// Monta a mensagem
-// Array com os parametros para o envio
-$data = array(
-    'origem'=>"NexusTank", // Seu numero que Ã© origem
-    'destino'=>$numero, // E o numero de destino
-    'tipo'=>"texto",
-    'access_token'=>$access_token,
-    'texto'=>$SMS
-);
-// realiza o envio
-$req_sms = requisicaoApi($data, "sms/send");
-}
 function get_ip_address() {
     // check for shared internet/ISP IP
     if (!empty($_SERVER['HTTP_CLIENT_IP']) && validate_ip($_SERVER['HTTP_CLIENT_IP'])) {
@@ -187,85 +85,7 @@ function validate_ip($ip) {
     }
     return true;
 }
-function sendmail($recipient,$name,$subject,$content,$AltBody)
-{
-	global $email,$senha,$nomeDDtank;
-	require "PHPMailer/PHPMailerAutoload.php";
-	$mail = new PHPMailer;
-$mail->CharSet = 'UTF-8';
-$mail->isSMTP();                                      // Set mailer to use SMTP
-$mail->Host = 'smtp.gmail.com';  // Specify main and backup SMTP servers
-$mail->Port=587;
-$mail->SMTPAuth = true;                               // Enable SMTP authentication
-$mail->Username = $email;                 // SMTP username
-$mail->Password = $senha;                           // SMTP password
-$mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
-$mail->Priority = 1;
-$mail->AddCustomHeader("X-MSMail-Priority: High");
-// Not sure if Priority will also set the Importance header:
-$mail->AddCustomHeader("Importance: High");
-$mail->From = $email;
-$mail->FromName = $nomeDDtank;
-$mail->addAddress($recipient, $name);     // Add a recipient
-$mail->addReplyTo($email, $nomeDDtank);
 
-$mail->WordWrap = 50;                                 // Set word wrap to 50 characters
-$mail->isHTML(true);                                  // Set email format to HTML
-
-$mail->Subject = $subject;
-$mail->Body    = $content;
-$mail->AltBody = $AltBody;
-
-if(!$mail->send()) {
-echo 'Message could not be sent.';
-    echo 'Mailer Error: ' . $mail->ErrorInfo;
-	} else {
-   // echo 'Message has been sent';
-}
-}
-
-function sendmailSuporte($from,$fromName,$recipient,$name,$subject,$content,$AltBody)
-{
-	global $email,$senha;
-	require "PHPMailer/PHPMailerAutoload.php";
-	$mail = new PHPMailer;
-$mail->CharSet = 'UTF-8';
-$mail->isSMTP();                                      // Set mailer to use SMTP
-$mail->Host = 'smtp.gmail.com';  // Specify main and backup SMTP servers
-$mail->Port=587;
-$mail->SMTPAuth = true;                               // Enable SMTP authentication
-$mail->Username = $email;                 // SMTP username
-$mail->Password = $senha;                           // SMTP password
-$mail->SMTPSecure = 'tls';                            // Enable encryption, 'ssl' also accepted
-$mail->Priority = 1;
-$mail->AddCustomHeader("X-MSMail-Priority: High");
-// Not sure if Priority will also set the Importance header:
-$mail->AddCustomHeader("Importance: High");
-$mail->AddCustomHeader("Return-path: {$from}");
-$mail->addReplyTo($from, $fromName);
-$mail->From = $fromName;
-$mail->FromName = $from;
-$mail->addAddress($recipient, $name);     // Add a recipient
-
-
-$mail->WordWrap = 50;                                 // Set word wrap to 50 characters
-$mail->isHTML(true);                                  // Set email format to HTML
-
-$mail->Subject = $subject;
-$mail->Body    = $content;
-$mail->AltBody = $AltBody;
-
-if(!$mail->send()) {
- echo 'Message could not be sent.';
-    echo 'Mailer Error: ' . $mail->ErrorInfo;
-	} else {
-   // echo 'Message has been sent';
-}
-}
-function getdia(){
-	$time = gmdate("Y-m-d H:i:s", time() + 3600*(date('0')-2));
-	return $time;
-}
 function loadimage($image,$loaivp,$sex)
 {
 	switch($sex)
@@ -524,10 +344,15 @@ function getQualityName($id)
 }
 function loadCoin($uid)
 {
-	global $conn,$dbtank;
-	$q = q("Select TOP 1 Coin from {$dbtank}.dbo.Sys_Users_Detail where UserId = '{$_SESSION['UserIdTank']}'");
-	$r = qa($q);
-	return (int)$r['Coin'];
+	/* 24.08.2026: $uid parametresi hic kullanilmiyor, bunun yerine
+	   $_SESSION['UserIdTank'] okunuyordu. Oturum disindan cagrildiginda
+	   (or. bir yonetim betigi) yanlis oyuncunun kuponunu donuyordu. */
+	global $dbtank;
+	$oyunId = (int)$uid;
+	if ($oyunId <= 0 && isset($_SESSION['UserIdTank'])) $oyunId = (int)$_SESSION['UserIdTank'];
+	if ($oyunId <= 0) return 0;
+	$r = qa(qp("SELECT TOP 1 Coin FROM {$dbtank}.dbo.Sys_Users_Detail WHERE UserID = ?", array($oyunId)));
+	return $r ? (int)$r['Coin'] : 0;
 }
 function IsVipUser($id)
 {
@@ -566,29 +391,6 @@ $ch = curl_init();
 	return (String)($data);
 }
 
-function GetPlayersOnline() {
-global $linksite;
-							$serverlist = (simpleLoadURL(''.$linksite.'/req/serverlist.ashx?rnd='.geraString(9,true,true,false).''));
-							$arrayServer=explode('=',$serverlist);
-							//print_r($arrayServer);
-							preg_match_all('!\d+!', $arrayServer[3], $onlines);
-							//$onlines = substr($serverlist, strpos($serverlist, "Online=") + 1); 
-							return ($onlines[0][0]);
-}
-function GetPlayersOnlineServidor($serverId) {
-global $linksite;
-							$serverlist = (simpleLoadURL(''.$linksite.'/req/serverlist.ashx?rnd='.geraString(9,true,true,false).''));
-							$arrayServer=explode('=',$serverlist);
-							//print_r($arrayServer);
-							if($serverId==1){
-							preg_match_all('!\d+!', $arrayServer[13], $onlines);
-							}
-							if($serverId==2){
-							preg_match_all('!\d+!', $arrayServer[22], $onlines);
-							}
-							//$onlines = substr($serverlist, strpos($serverlist, "Online=") + 1); 
-							return ($onlines[0][0]);
-}
 function LogShop($data,$type) {
 	global $conn;
 	# 1: Auto item for vip
@@ -599,11 +401,74 @@ function LogShop($data,$type) {
 }
 function EscapeString($string)
 {
-	$string = str_replace("'",'',$string);
-	$string = str_replace('"','',$string);
-	$string = str_replace(';','',$string);
-	$string = str_replace('-','',$string);
-	$string = str_replace(')','',$string);
-	$string = str_replace('(','',$string);
-	return $string;
+	/* 24.08.2026: bu fonksiyon ' " ; - ) ( karakterlerini SILIYORDU.
+	   Tire silindigi icin "bat-han" gibi kullanici adlari ve tireli
+	   e-postalar veritabaniyla asla eslesmiyordu (sifre kurtarma
+	   pratikte kirikti). Artik veri bozulmuyor, tek tirnak T-SQL
+	   kuralina gore ikilenip kacisliyor.
+	   YINE DE: yeni kodda bunu kullanma, qp() ile parametre gecir. */
+	return str_replace("'", "''", (string)$string);
+}
+
+/* =====================================================================
+   24.08.2026 — GUVENLIK ALTYAPISI
+   ---------------------------------------------------------------------
+   Eski kodda giris disindaki her sorgu dize birlestirmeyle kuruluyordu.
+   addslashes()/EscapeString() SQL Server'da guvenilir bir savunma degil;
+   sqlsrv zaten parametre dizisi kabul ediyor. Yeni/duzeltilen sayfalar
+   q() yerine qp() kullanir.
+   ===================================================================== */
+function qp($sql, $params = array())
+{
+	global $conn;
+	return sqlsrv_query($conn, $sql, $params, array("Scrollable" => SQLSRV_CURSOR_KEYSET));
+}
+
+/* Tek satirlik yardimci: parametreli sorgudan ilk satiri dondur */
+function qp1($sql, $params = array())
+{
+	$rs = qp($sql, $params);
+	return $rs ? sqlsrv_fetch_array($rs, SQLSRV_FETCH_ASSOC) : null;
+}
+
+/* ---------- CSRF ---------- */
+function csrfJeton()
+{
+	if (empty($_SESSION['csrf'])) {
+		$_SESSION['csrf'] = bin2hex(random_bytes(32));
+	}
+	return $_SESSION['csrf'];
+}
+
+function csrfAlan()
+{
+	return '<input type="hidden" name="csrf" value="' . htmlspecialchars(csrfJeton(), ENT_QUOTES) . '">';
+}
+
+function csrfGecerli()
+{
+	return !empty($_SESSION['csrf'])
+		&& !empty($_POST['csrf'])
+		&& hash_equals($_SESSION['csrf'], (string)$_POST['csrf']);
+}
+
+/* ---------- oturum ---------- */
+function oturumTazele()
+{
+	/* Oturum sabitleme (session fixation) saldirisina karsi: giris
+	   basarili olur olmaz oturum kimligi yenilenir. */
+	if (session_status() === PHP_SESSION_ACTIVE) {
+		session_regenerate_id(true);
+	}
+}
+
+function oturumKapat()
+{
+	$_SESSION = array();
+	if (ini_get('session.use_cookies')) {
+		$p = session_get_cookie_params();
+		setcookie(session_name(), '', time() - 42000,
+			$p['path'], $p['domain'], $p['secure'], $p['httponly']);
+	}
+	session_destroy();
 }

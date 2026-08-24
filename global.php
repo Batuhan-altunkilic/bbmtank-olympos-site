@@ -33,8 +33,10 @@ $LinkFlash['br']         = 'http://bbmtank.com/335flash/';
 $LinkFlash['vt']         = 'http://res124.gn.zing.vn/flashtr/';
 
 # --- oyun dosyalari ---
+# 24.08.2026: $Play[1] sunucuda BULUNMAYAN playvip.php'yi gosteriyordu.
+# Reklamsiz/VIP ayrimi bu kurulumda yok; ikisi de tek launcher'a bakar.
 $Play[0] = 'play.php';
-$Play[1] = 'playvip.php';
+$Play[1] = 'play.php';
 $RateTimeToCoin = 5;   # cevrimici sureden kupona cevrim orani
 
 include('function.php');

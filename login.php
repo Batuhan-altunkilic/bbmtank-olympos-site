@@ -1,48 +1,14 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BBMTank</title>
-      <link rel="icon" type="image/png" href="http://bbmtank.com/image/img/fav.ico">
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
-    <style>
-        /* Sayfa genelini ortalamak için */
-        body {
-            display: flex;
-            justify-content: center; /* Yatayda ortalar */
-            align-items: center; /* Dikeyde ortalar */
-            height: 100vh; /* Sayfa yüksekliğini kapsar */
-            margin: 0; /* Varsayılan margin'leri sıfırlar */
-        }
-		    body {
-            background:center / contain no-repeat url("dogrulama2.png");
-				background-repeat : no-repeat;
-				background-repeat: no-repeat;
-          background-size: cover;
-          height:900px;
-          
-				
-				
-				
-				
-		}
-
-        form {
-            text-align: center; /* Form elemanlarını yatayda ortalar */
-        }
-    </style>
-</head>
-<body>
-<h1>&nbsp;</h1>
-    <form action="Anasayfa.php" method="POST">
-     <div class="g-recaptcha" data-sitekey="6LexzqUqAAAAAGt1nav4hv5ynmRj7TDTck6oJTCk"></div><br><br>
-        <button type="submit">Gönder</button>
-<br><br><br><br><br><br><br><br><br><br>
-		
-    </form>
-
-	
-</body>
-</html>
+<?php
+/* =====================================================================
+   BBMTANK OLYMPOS — login.php                     24.08.2026
+   ---------------------------------------------------------------------
+   Bu dosya bir "dogrulama" ara sayfasiydi ama hicbir sey dogrulamiyordu:
+     * Sayfada bir reCAPTCHA kutusu vardi, fakat sunucu tarafinda
+       g-recaptcha-response HIC kontrol edilmiyordu -> tamamen dekoratif.
+     * Form, Anasayfa.php'ye kullanici adi/sifre olmadan BOS POST atiyordu;
+       giris diye bir sey gerceklesmiyordu.
+   Gercek giris formu Anasayfa.php'de. Bu dosya artik oraya yonlendiriyor;
+   eski baglantilar (ornegin ajax.php) kirilmasin diye duruyor.
+   ===================================================================== */
+header('Location: Anasayfa.php#giris', true, 301);
+exit();

@@ -30,6 +30,9 @@ $basari  = '';
 $eski    = array('rusername' => '', 'nickname' => '', 'email' => '', 'sex' => '1');
 
 if (isset($_POST['register'])) {
+    if (!csrfGecerli()) {
+        $hatalar[] = 'Oturum doğrulaması başarısız. Sayfayı yenileyip tekrar dene.';
+    }
     $u  = trim($_POST['rusername']);
     $n  = trim($_POST['nickname']);
     $e  = trim($_POST['email']);
@@ -70,39 +73,51 @@ if (isset($_POST['register'])) {
 
     if (!$hatalar) {
         co();
-        $us = addslashes($u); $ns = addslashes($n); $es = addslashes($e);
-        $ph = strtoupper(md5($p));
+        $ph  = strtoupper(md5($p));
+        $ph2 = strtoupper(md5($p2));
 
-        if (qn(q("SELECT TOP 1 UserId FROM Mem_Users WHERE UserName = '{$us}'")) != 0) {
+        /* 24.08.2026: bu blok addslashes() + dize birlestirme kullaniyordu.
+           addslashes SQL Server icin dogru bir kacis yontemi degil; tum
+           sorgular ve saklı yordam cagrilari parametreli hale getirildi. */
+        if (qp1("SELECT TOP 1 UserId FROM Mem_Users WHERE UserName = ?", array($u))) {
             $hatalar[] = 'Bu kullanıcı adı zaten alınmış.';
-        } elseif (qn(q("SELECT TOP 1 UserId FROM Webshop_Account WHERE Email = '{$es}'")) != 0) {
+        } elseif (qp1("SELECT TOP 1 UserId FROM Webshop_Account WHERE Email = ?", array($e))) {
             $hatalar[] = 'Bu e-posta adresiyle daha önce kayıt olunmuş.';
-        } elseif (qn(q("SELECT TOP 1 UserId FROM {$dbtank}.dbo.Sys_Users_Detail WHERE NickName = '{$ns}'")) != 0) {
+        } elseif (qp1("SELECT TOP 1 UserId FROM {$dbtank}.dbo.Sys_Users_Detail WHERE NickName = ?", array($n))) {
             $hatalar[] = 'Bu karakter adı kullanılıyor, başka bir tane dene.';
         } else {
-            q("exec " . $config['Database'] . ".dbo.Webshop_Register @ApplicationName=N'DanDanTang',"
-              . "@UserName=N'{$us}',@password=N'{$ph}',@email='{$es}',"
-              . "@passtwo = '" . strtoupper(md5($p2)) . "',@error = 0");
+            qp("EXEC {$config['Database']}.dbo.Webshop_Register "
+               . "@ApplicationName = N'DanDanTang', @UserName = ?, @password = ?, "
+               . "@email = ?, @passtwo = ?, @error = 0",
+               array($u, $ph, $e, $ph2));
 
             /* BBMTank ROADMAP P0-1 (2026-08-20): @GP/@Grade prosedure birakildi.
                SP_Users_Active baslangic seviyesini BBM_Calibration.NewPlayerStartGrade
                anahtarindan okur; buradaki 0'lar sadece imza doldurmasidir. */
-            q("exec {$dbtank}.dbo.SP_Users_Active @UserID='',@Attack=0,@Colors=N',,,,,,',@ConsortiaID=0,"
-              . "@Defence=0,@Gold=0,@GP=0,@Grade=0,@Luck=0,@Money=0,@Style=N',,,,,,',@Agility=0,@State=0,"
-              . "@UserName=N'{$us}',@PassWord=N'{$ph}',@Sex='{$s}',@Hide=1111111111,@ActiveIP=N'',@Skin=N'',@Site=N''");
+            qp("EXEC {$dbtank}.dbo.SP_Users_Active @UserID = '', @Attack = 0, @Colors = N',,,,,,', "
+               . "@ConsortiaID = 0, @Defence = 0, @Gold = 0, @GP = 0, @Grade = 0, @Luck = 0, @Money = 0, "
+               . "@Style = N',,,,,,', @Agility = 0, @State = 0, @UserName = ?, @PassWord = ?, @Sex = ?, "
+               . "@Hide = 1111111111, @ActiveIP = N'', @Skin = N'', @Site = N''",
+               array($u, $ph, $s));
 
-            if ($s == 1) {
-                q("exec {$dbtank}.dbo.SP_Users_RegisterNotValidate @UserName=N'{$us}',@PassWord=N'{$ph}',"
-                  . "@NickName=N'{$ns}',@BArmID=7003,@BHairID=3158,@BFaceID=6103,@BClothID=5160,@BHatID=1142,"
-                  . "@GArmID=7003,@GHairID=3158,@GFaceID=6103,@GClothID=5160,@GHatID=1142,@ArmColor=N'',"
-                  . "@HairColor=N'',@FaceColor=N'',@ClothColor=N'',@HatColor=N'',@Sex='{$s}',@StyleDate=0");
-            } else {
-                q("exec {$dbtank}.dbo.SP_Users_RegisterNotValidate @UserName=N'{$us}',@PassWord=N'{$ph}',"
-                  . "@NickName=N'{$ns}',@BArmID=7003,@BHairID=3244,@BFaceID=6204,@BClothID=5276,@BHatID=1214,"
-                  . "@GArmID=7003,@GHairID=3244,@GFaceID=6202,@GClothID=5276,@GHatID=1214,@ArmColor=N'',"
-                  . "@HairColor=N'',@FaceColor=N'',@ClothColor=N'',@HatColor=N'',@Sex='{$s}',@StyleDate=0");
-            }
-            q("exec {$dbtank}.dbo.SP_Users_LoginWeb @UserName=N'{$us}',@Password=N'',@FirstValidate=0,@NickName=N'{$ns}'");
+            /* baslangic gorunumu: erkek / kadin varsayilan setleri */
+            $gorunum = ($s == 1)
+                ? array('hair' => 3158, 'face' => 6103, 'cloth' => 5160, 'hat' => 1142, 'gface' => 6103)
+                : array('hair' => 3244, 'face' => 6204, 'cloth' => 5276, 'hat' => 1214, 'gface' => 6202);
+
+            qp("EXEC {$dbtank}.dbo.SP_Users_RegisterNotValidate @UserName = ?, @PassWord = ?, @NickName = ?, "
+               . "@BArmID = 7003, @BHairID = ?, @BFaceID = ?, @BClothID = ?, @BHatID = ?, "
+               . "@GArmID = 7003, @GHairID = ?, @GFaceID = ?, @GClothID = ?, @GHatID = ?, "
+               . "@ArmColor = N'', @HairColor = N'', @FaceColor = N'', @ClothColor = N'', @HatColor = N'', "
+               . "@Sex = ?, @StyleDate = 0",
+               array($u, $ph, $n,
+                     $gorunum['hair'], $gorunum['face'], $gorunum['cloth'], $gorunum['hat'],
+                     $gorunum['hair'], $gorunum['gface'], $gorunum['cloth'], $gorunum['hat'],
+                     $s));
+
+            qp("EXEC {$dbtank}.dbo.SP_Users_LoginWeb @UserName = ?, @Password = N'', "
+               . "@FirstValidate = 0, @NickName = ?",
+               array($u, $n));
 
             $basari = 'Hoş geldin ' . htmlspecialchars($n) . '! Hesabın hazır, hemen giriş yapabilirsin.';
             $eski = array('rusername' => '', 'nickname' => '', 'email' => '', 'sex' => '1');
@@ -146,6 +161,7 @@ include('parts/ust.php');
         <?php endif; ?>
 
         <form action="register.php" method="POST" autocomplete="off" style="margin-top:12px">
+          <?php echo csrfAlan(); ?>
           <div class="alan">
             <label for="a1">Kullanıcı Adı</label>
             <input id="a1" type="text" name="rusername" minlength="6" maxlength="30" required
