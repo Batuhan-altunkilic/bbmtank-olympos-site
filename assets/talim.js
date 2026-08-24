@@ -27,7 +27,8 @@
       perdeBaslik = perde.querySelector("h3"),
       perdePuan = perde.querySelector(".puan"),
       perdeYazi = perde.querySelector("p"),
-      perdeDugme = perde.querySelector("button");
+      perdeDugme = perde.querySelector("button"),
+      etZeus = kap.querySelector("[data-zeus]");
 
   /* ---------- dunya ---------- */
   var G = 1000, Y = 470;                 /* ic cozunurluk */
@@ -44,9 +45,9 @@
   var REKOR_ANAHTAR = "bbm_talim_rekor";
   var rekor = parseInt(localStorage.getItem(REKOR_ANAHTAR) || "0", 10) || 0;
 
-  var ZEUS_TAM = ["Tam on ikiden!", "Iste bu, Olympos gurur duydu.", "Zeus bile bu kadarini yapamazdi."];
-  var ZEUS_YAKIN = ["Az kaldi, ruzgari biraz daha hesapla.", "Kiyisindan gecti.", "Neredeyse. Gucu bir tik oynat."];
-  var ZEUS_UZAK = ["Manzarayi vurdun.", "O atis komsu haritaya dustu.", "Ruzgar seni dinlemiyor galiba."];
+  var ZEUS_TAM = ["Tam on ikiden!", "İşte bu, Olympos gurur duydu.", "Zeus bile bu kadarını yapamazdı."];
+  var ZEUS_YAKIN = ["Az kaldı, rüzgârı biraz daha hesapla.", "Kıyısından geçti.", "Neredeyse. Gücü bir tık oynat."];
+  var ZEUS_UZAK = ["Manzarayı vurdun.", "O atış komşu haritaya düştü.", "Rüzgâr seni dinlemiyor galiba."];
 
   function rast(a, b) { return a + Math.random() * (b - a); }
   function sec(l) { return l[Math.floor(Math.random() * l.length)]; }
@@ -100,7 +101,7 @@
     var r = gucSar.getBoundingClientRect();
     d.isaret = Math.max(2, Math.min(100, (e.clientX - r.left) / r.width * 100));
     yazdir();
-    rozetVer("isaret", "\u{1F3AF}", "Isaretci", "Guc barina isaret koydun. Simdi M'ye bas.");
+    rozetVer("isaret", "\u{1F3AF}", "İşaretçi", "Güç barına işaret koydun. Şimdi M'ye bas.");
   });
 
   function ates() {
@@ -117,7 +118,7 @@
       d.duman.push({ x: d.mermi.x, y: d.mermi.y, vx: rast(0.5, 3.4) * Math.cos(r) + rast(-.7, .7),
                      vy: -rast(0.5, 3.4) * Math.sin(r) + rast(-.7, .7), o: 1, b: rast(3, 9) });
     yazdir();
-    if (!window.__talimIlk) { window.__talimIlk = 1; rozetVer("ilkatis", "\u{1F4A5}", "Ilk atis", "Talim meydanina hos geldin."); }
+    if (!window.__talimIlk) { window.__talimIlk = 1; rozetVer("ilkatis", "\u{1F4A5}", "İlk atış", "Talim meydanına hoş geldin."); }
   }
 
   document.addEventListener("keydown", function (e) {
@@ -165,12 +166,15 @@
   /* ---------- puanlama ---------- */
   function vurus(x) {
     var uz = Math.abs(x - d.hedef), p = 0, s;
-    if (uz <= 16) { p = 100; s = "TAM ISABET"; }
-    else if (uz <= 38) { p = 60; s = "COK IYI"; }
+    if (uz <= 16) { p = 100; s = "TAM İSABET"; }
+    else if (uz <= 38) { p = 60; s = "ÇOK İYİ"; }
     else if (uz <= 78) { p = 25; s = "YAKIN"; }
     else { p = 0; s = "ISKA"; }
     d.puan += p;
     ucanYazi(x, p ? "+" + p : s);
+    if (etZeus) etZeus.textContent = p === 100 ? sec(ZEUS_TAM)
+                                    : p > 0    ? sec(ZEUS_YAKIN)
+                                               : sec(ZEUS_UZAK);
     if (p === 100) rozetVer("tam", "\u{1F3C6}", "Tam isabet", sec(ZEUS_TAM));
     if (d.atisKalan <= 0) setTimeout(sonuc, 900); else setTimeout(function () { yeniTur(false); }, 900);
     return p;
@@ -180,7 +184,7 @@
     var e = document.createElement("div");
     e.className = "ucan";
     e.textContent = m;
-    e.style.left = (x / G * 100) + "%";
+    e.style.left = (Math.max(6, Math.min(94, x / G * 100))) + "%";
     e.style.top = ((YER - 60) / Y * 100) + "%";
     kap.querySelector(".sahne").appendChild(e);
     setTimeout(function () { e.remove(); }, 1150);
@@ -193,13 +197,13 @@
     perdeBaslik.textContent = yeni ? "Yeni rekor!" : "Talim bitti";
     perdePuan.textContent = d.puan;
     perdeYazi.innerHTML = d.puan >= 400
-      ? "Olympos'un topcusu sensin. Bu isabetle gercek meydanda da is yaparsin."
+      ? "Olympos'un topçusu sensin. Bu isabetle gerçek meydanda da iş yaparsın."
       : d.puan >= 200
-        ? "Fena degil. Ruzgari bir tik daha erken hesaba katarsan tam isabet gelir."
-        : "Ruzgar yonu ve gucu her turda degisiyor; once oku, sonra ates et.";
+        ? "Fena değil. Rüzgârı bir tık daha erken hesaba katarsan tam isabet gelir."
+        : "Rüzgâr yönü ve gücü her turda değişiyor; önce oku, sonra ateş et.";
     perde.classList.add("ac");
     yazdir();
-    if (d.puan >= 400) rozetVer("usta", "\u{1F31F}", "Talim ustasi", "Tek turda 400 puan. Saygi duyduk.");
+    if (d.puan >= 400) rozetVer("usta", "\u{1F31F}", "Talim ustası", "Tek turda 400 puan. Saygı duyduk.");
   }
 
   /* ---------- rozet kopru ---------- */
@@ -385,7 +389,7 @@
       if (Math.abs(m.x - d.hedef) < 30 && Math.abs(m.y - hy) < 30) { carpti = true; tam = true; }
       else if (m.y >= YER) { carpti = true; }
       else if (m.x > G + 90 || m.x < -90 || m.y > Y + 200) {
-        d.ucuyor = false; d.mermi = null; vurus(-9999); carpti = false;
+        d.ucuyor = false; d.mermi = null; vurus(m.x > G ? G + 200 : -200); carpti = false;
       }
       if (carpti) {
         d.ucuyor = false;

@@ -59,6 +59,10 @@
   <span></span>
 </div>
 
-<script charset="utf-8" src="assets/bbm.js?v=20260824g"></script>
+<script charset="utf-8" src="assets/bbm.js?v=20260824h"></script>
+<script charset="utf-8" src="assets/eglence.js?v=20260824h"></script>
+<?php if (!empty($sayfaScript)) { ?>
+<script charset="utf-8" src="assets/<?php echo htmlspecialchars($sayfaScript); ?>?v=20260824h"></script>
+<?php } ?>
 </body>
 </html>

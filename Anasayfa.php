@@ -106,6 +106,7 @@ if (function_exists('co')) {
   if ($rs) while ($x = qa($rs)) $sv_lider[] = $x;
 }
 $sayfaBaslik   = 'Ana Sayfa';
+$sayfaScript   = 'talim.js';
 $sayfaAciklama = 'Olympos\'un tepesinde sıra tabanlı topçu savaşları. Açıyı ayarla, gücü tuttur, rüzgârı hesapla. Kurulum yok, tarayıcıdan oyna.';
 include('parts/ust.php');
 ?>
@@ -270,6 +271,62 @@ include('parts/ust.php');
       </div>
 
     </div>
+  </div>
+</section>
+
+
+<!-- ================= NİŞAN TALİMİ (mini oyun) ================= -->
+<section class="bolum" id="talim-bolum">
+  <div class="wrap">
+    <div class="baslik rv">
+      <div class="tepe">Sıcak deneme</div>
+      <h2>Kayıt olmadan <span class="vurgu">bir el at</span></h2>
+      <p>
+        Aşağıdaki talim meydanı oyunun gerçek mekaniğiyle çalışır: açıyı ayarla,
+        rüzgârı oku, gücü tuttur. Beş atış hakkın var — rekorunu kırabilir misin?
+      </p>
+    </div>
+
+    <div class="talim rv" id="talim">
+      <div class="sahne">
+        <div class="tepe-serit">
+          <span class="kutucuk">Açı <b data-aci>45°</b></span>
+          <span class="kutucuk ruzgar">Rüzgâr <b data-ruzgar>0.0</b></span>
+          <span class="kutucuk">Atış <b data-atis>5</b></span>
+          <span class="kutucuk">Puan <b data-puan>0</b></span>
+          <span class="kutucuk" style="margin-left:auto">Rekor <b data-rekor>0</b></span>
+        </div>
+        <canvas width="1000" height="470" aria-label="Nişan talimi mini oyunu"></canvas>
+      </div>
+
+      <div class="kontrol">
+        <div class="guc-sar" title="Tıklayarak işaret koy, sonra M'ye bas">
+          <div class="dol"></div>
+          <span class="isaret"></span>
+          <span class="etiket">0%</span>
+        </div>
+        <span class="tus"><kbd>Fare</kbd> nişan al</span>
+        <span class="tus"><kbd>Boşluk</kbd> basılı tut &amp; bırak</span>
+        <span class="tus"><kbd>M</kbd> işarete kadar otomatik</span>
+        <span class="tus"><kbd>↑</kbd><kbd>↓</kbd> ince ayar</span>
+        <span class="tus" style="flex-basis:100%;color:var(--altin-isik);font-style:italic"
+              data-zeus>Zeus seni izliyor. Rüzgârı oku, sonra ateş et.</span>
+      </div>
+
+      <div class="perde-son">
+        <div class="ic">
+          <h3>Talim bitti</h3>
+          <div class="puan">0</div>
+          <p></p>
+          <button class="btn" type="button">Tekrar Dene</button>
+        </div>
+      </div>
+    </div>
+
+    <p class="aciklama rv" style="text-align:center;margin:22px auto 0">
+      Bu mekaniğin aynısı oyunun içinde de var: güç barına tıklayıp işaret koyar,
+      <kbd>M</kbd> ile aynı gücü her seferinde birebir tutturursun.
+    </p>
   </div>
 </section>
 

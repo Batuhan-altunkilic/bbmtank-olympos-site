@@ -472,6 +472,7 @@ kbd{display:inline-block;min-width:28px;text-align:center;padding:3px 9px;border
    ===================================================================== */
 .talim{position:relative;border-radius:18px;overflow:hidden;
   border:3px solid var(--altin);box-shadow:0 0 0 5px var(--altin-derin),0 34px 70px -30px #000}
+.talim .sahne{position:relative;display:block}
 .talim canvas{display:block;width:100%;height:auto;cursor:crosshair;background:#0b1226}
 
 /* ust bilgi seridi */
