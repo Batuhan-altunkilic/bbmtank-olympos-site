@@ -33,3 +33,6 @@ $BBM_PANEL_PASS = 'BURAYA_UZUN_RASTGELE_BIR_SIFRE';
 $BBM_SQL2_HOST = '';
 $BBM_SQL2_UID  = '';
 $BBM_SQL2_PWD  = '';
+
+/* --- clientlog.php uzaktan erisim anahtari (bos birakirsan yalnizca yerel ag) --- */
+$BBM_LOG_ANAHTARI = '';

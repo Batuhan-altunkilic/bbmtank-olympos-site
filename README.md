@@ -82,13 +82,20 @@ Gereken: **IIS veya Apache + PHP** ve `sqlsrv` eklentisi, bir de **SQL Server**
 
 ```bash
 # 1) dosyaları site köküne koy
-# 2) gizli yapılandırmayı oluştur
-cp gizli.ornek.php gizli.php
-# 3) gizli.php içindeki SQL ve (istersen) SMTP bilgilerini doldur
+# 2) gizli yapılandırmayı oluştur — tercihen site klasörünün BİR ÜSTÜNE
+cp gizli.ornek.php ../gizli.php
+# 3) ../gizli.php içindeki SQL ve (istersen) SMTP bilgilerini doldur
 ```
 
-`gizli.php` `.gitignore` içindedir ve **asla** depoya girmez. `global.php` bu dosyayı
-`require` eder; yoksa sayfa kibarca "yapılandırma eksik" der.
+`gizli_yukle.php` dosyayı sırayla iki yerde arar:
+
+1. `../gizli.php` — **önerilen.** Web kökünün dışında kaldığı için, PHP işleyicisi bir
+   şekilde devre dışı kalsa bile dosya tarayıcıya düz metin olarak servis edilemez.
+2. `./gizli.php` — basit kurulum; aynı klasörde de çalışır.
+
+`gizli.php` `.gitignore` içindedir ve **asla** depoya girmez; yoksa sayfa kibarca
+"yapılandırma eksik" der. İçinde SQL bilgileri, SMTP hesabı, yönetici paneli şifresi ve
+`clientlog.php` erişim anahtarı bulunur.
 
 Sayfalar veriyi doğrudan veritabanından okur; sıralama, oyuncu sayısı ve harita sayısı
 gibi rakamların hiçbiri elle yazılmamıştır.
@@ -103,6 +110,28 @@ gibi rakamların hiçbiri elle yazılmamıştır.
 | ![Kayıt](ekran-goruntuleri/6-kayit.jpg) | |
 
 ---
+
+## Güvenlik
+
+Site devralınan bir kod tabanından geliyor; temizlik sırasında kapatılanlar:
+
+* `Anasayfa.php`'de sayfada karşılığı olmayan ama **dışarıdan POST ile çalıştırılabilen**
+  bir kayıt bloğu vardı. Captcha `$_SESSION['dnss_code']` ile karşılaştırılıyordu ve bu
+  değer hiçbir yerde atanmıyordu; boş captcha ile `'' != null` FALSE döndüğü için kontrol
+  geçiliyor, blok hesabı `Grade=17 / GP=264058` ile açıyordu.
+* Obfuscate edilmiş bir yardımcı dosya (`eval(base64_decode(...))`, `chr()` ile kurulan
+  fonksiyon adları, uzaktan içerik çekme) web kökünden çıkarıldı.
+* Kimlik doğrulaması olmayan bir hediye kodu üreticisi ve artık hiçbir arayüzü olmayan
+  webshop uçları (`ajax.php`, `module.php`, `class2/`, `class4/`, `module/`, `pay/`)
+  web kökünden çıkarıldı — hepsi zaten kırıktı.
+* Bütün sorgular parametreli (`qp`/`qp1`); `addslashes`/karakter silen "escape"
+  fonksiyonlarına dayanılmıyor.
+* Oturum: girişte `session_regenerate_id`, çerezi de temizleyen çıkış, çıkışta jeton,
+  giriş/kayıt/şifre kurtarma formlarında CSRF.
+* Şifre sıfırlama bağlantısı 1 saat geçerli ve tek kullanımlık; kod ve yeni şifre
+  `random_bytes`/`random_int` ile üretiliyor.
+* Yönetici paneli IP başına 5 denemede 15 dakika kilitleniyor.
+* `clientlog.php` yalnızca yerel/özel ağdan ya da anahtarla erişilebiliyor.
 
 ## Notlar
 

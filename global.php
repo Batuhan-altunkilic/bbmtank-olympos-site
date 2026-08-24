@@ -11,9 +11,11 @@
 @ini_set('display_errors', '0');
 error_reporting(E_ERROR | E_PARSE);
 
-$_gizli = __DIR__ . '/gizli.php';
-if (!file_exists($_gizli)) {
-    die('Yapilandirma eksik: gizli.ornek.php dosyasini gizli.php olarak kopyalayip doldurun.');
+require_once __DIR__ . '/gizli_yukle.php';
+$_gizli = bbm_gizli_yukle(__DIR__);
+if ($_gizli === null) {
+    die('Yapilandirma eksik: gizli.ornek.php dosyasini gizli.php olarak kopyalayip doldurun '
+        . '(tercihen site klasorunun BIR USTUNE).');
 }
 require_once $_gizli;
 
